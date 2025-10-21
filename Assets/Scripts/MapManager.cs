@@ -85,30 +85,33 @@ public class MapManager : MonoBehaviour
     {
         if (grid == null) return;
 
-        for (int x = 0; x < gridWidth; x++)
-        {
-            for (int y = 0; y < gridHeight; y++)
-            {
-                Node node = grid[x, y];
-                if (node != null)
-                {
-                    Gizmos.color = node.isObstacle ? Color.black : Color.white;
-                    Gizmos.DrawCube(node.worldPosition, Vector2.one * gridSize);
+        Gizmos.color = Color.white;
 
-                    Gizmos.color = Color.gray;
-                    Gizmos.DrawWireCube(node.worldPosition, Vector2.one * gridSize);
-                }
-            }
+        for (int x = 0; x <= gridWidth; x++)
+        {
+            Vector2 start = new Vector2(gridOrigin.x + (x * gridSize), gridOrigin.y);
+            Vector2 end = new Vector2(gridOrigin.x + (x * gridSize), gridOrigin.y + gridHeight * gridSize);
+            Gizmos.DrawLine(start, end);
+        }
+
+        Gizmos.color = Color.white;
+
+        for(int y = 0; y <= gridHeight; y++)
+        {
+            Vector2 start = new Vector2(gridOrigin.y, gridOrigin.x + (y * gridSize));
+            Vector2 end = new Vector2(gridOrigin.y + gridWidth * gridSize, gridOrigin.x + (y * gridSize));
+            Gizmos.DrawLine(start, end);
         }
     }
 
     //-------------------寻路算法函数部分-------------------
-    public List<Node> FindPath(Vector2 startWorldPos, Vector2 endWorldPos) //寻路方法
-                                                                           //1.转化坐标，获取始终点，并检查结点合法，创建开放列表和关闭哈希表，将起点添加开放表
-                                                                           //2.循环开始，在所有开放表中找到f值最少的或者g值最小的，添加到关闭表，移除开放表
-                                                                           //3.如果找到终点直接回溯，查找所有相邻结点，忽略障碍物或者已经在关闭列表邻居，
-                                                                           //4.重新计算g值，为当前g值加上当前到邻居的距离，如果新的g值小于原有的值或者不在开放列表中，重新赋值g，h值，设置父节点，如果开放列表不包含，则添加进去
-                                                                           //5.循环结束没有找到就返回空
+    public List<Node> FindPath(Vector2 startWorldPos, Vector2 endWorldPos)
+    //寻路方法
+    //1.转化坐标，获取始终点，并检查结点合法，创建开放列表和关闭哈希表，将起点添加开放表
+    //2.循环开始，在所有开放表中找到f值最少的或者g值最小的，添加到关闭表，移除开放表
+    //3.如果找到终点直接回溯，查找所有相邻结点，忽略障碍物或者已经在关闭列表邻居，
+    //4.重新计算g值，为当前g值加上当前到邻居的距离，如果新的g值小于原有的值或者不在开放列表中，重新赋值g，h值，设置父节点，如果开放列表不包含，则添加进去
+    //5.循环结束没有找到就返回空
     {
         Vector2Int startGrid = WorldToGrid(startWorldPos);
         Vector2Int endGrid = WorldToGrid(endWorldPos);

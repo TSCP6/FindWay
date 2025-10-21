@@ -9,103 +9,92 @@ public class Enemy : MonoBehaviour
 
     public float moveSpeed = 5f;
     public float movementThreshold = 0.01f;
+    public float findWayInterval = 0.5f;
     public bool showPath = false;
+
+    public Rigidbody2D enemyRb;
 
     public GameObject target;
 
-    bool isMoving = false;
-
     private List<MapManager.Node> curPath;
+    private float findWayTimer;
+    private int pathNodeIndex = 0;
 
     // Start is called before the first frame update
     void Start()
     {
         //在场景中寻找第一个含有mapmanager组件的物体，并赋值组件的引用
         mapManager = FindObjectOfType<MapManager>();
-
-        StartCoroutine(WaitForMapAndMove());
-    }
-
-    IEnumerator WaitForMapAndMove()
-    {
-        while (mapManager == null || mapManager.grid == null)
-        {
-            yield return null;
-        }
-        if (target != null)
-        {
-            MoveToTarget(target.transform.position);
-        }
-    }
-
-    void MoveToTarget(Vector2 targetPos)
-    {
-        if (isMoving) return; //正在寻路则不做处理
-
-        List<MapManager.Node> path = mapManager.FindPath(transform.position, targetPos);
-
-        if (path != null && path.Count > 0)
-        {
-            StartCoroutine(FollowPath(path));
-            curPath = path;
-        }
-        else
-        {
-            Debug.Log("can't find the path");
-        }
-    }
-
-    IEnumerator FollowPath(List<MapManager.Node> path)
-    {
-        isMoving = true;
-
-        foreach (MapManager.Node node in path)
-        {
-            while (Vector2.Distance(transform.position, node.worldPosition) > movementThreshold)
-            {
-                transform.position = Vector2.MoveTowards(transform.position, node.worldPosition, moveSpeed * Time.deltaTime);
-                yield return null;
-            }
-        }
-
-        isMoving = false;
-    }
-
-
-
-    private void OnDrawGizmos()
-    {
-        if (mapManager == null)
-        {
-            mapManager = FindObjectOfType<MapManager>();
-        }
-        if (mapManager != null)
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawCube(transform.position, Vector2.one * mapManager.gridSize);
-        }
-        else
-        {
-            // 如果mapManager还是null,使用默认大小
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawCube(transform.position, Vector2.one);
-        }
-        if (showPath)
-        {
-            if(curPath  != null)
-            {
-                foreach(MapManager.Node node in curPath)
-                {
-                    Gizmos.color = Color.green;
-                    Gizmos.DrawCube(node.worldPosition, mapManager.gridSize * Vector2.one);
-                }
-            }
-        }
+        enemyRb = GetComponent<Rigidbody2D>();
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (target == null || mapManager == null || mapManager.grid == null)
+        {
+            return;
+        }
+        findWayTimer += Time.deltaTime;
+        if(findWayTimer > findWayInterval)
+        {
+            UpdatePath();
+            findWayTimer = 0f;
+        }
+    }
 
+    private void FixedUpdate()
+    {
+        Move();
+    }
+
+    void UpdatePath() //找到新路径，路径满足条件，更新路径和节点索引，否则输出报错
+    {
+        List<MapManager.Node> newPath = mapManager.FindPath(transform.position, target.transform.position);
+
+        if(newPath != null && newPath.Count > 0)
+        {
+            curPath = newPath;
+            pathNodeIndex = 0;
+        }
+        else
+        {
+            curPath = null;
+            Debug.Log("Can't find the path");
+        }
+    }
+
+    void Move() //如果路径没有或走完则停止移动，否则朝目标节点移动，移动到节点位置则更新索引
+    {
+        if(curPath == null || curPath.Count <= pathNodeIndex)
+        {
+            return;
+        }
+
+        MapManager.Node targetNode = curPath[pathNodeIndex];
+
+        Vector2 pos = Vector2.MoveTowards(enemyRb.position, targetNode.worldPosition, moveSpeed * Time.deltaTime);
+        enemyRb.MovePosition(pos);
+
+        if (Vector2.Distance(transform.position, targetNode.worldPosition) == 0)
+        {
+            pathNodeIndex++;
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (showPath && curPath != null)
+        {
+            if (mapManager == null)
+            {
+                mapManager = FindObjectOfType<MapManager>();
+            }
+            foreach (MapManager.Node node in curPath)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawCube(node.worldPosition, mapManager.gridSize * Vector2.one);
+            }
+        }
     }
 }
