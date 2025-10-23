@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.Experimental.GraphView;
@@ -11,6 +12,10 @@ public class Enemy : MonoBehaviour
     public float movementThreshold = 0.01f;
     public float findWayInterval = 0.5f;
     public bool showPath = false;
+
+    public enum findPathMethod { FindPathAStar, FindPathDijkstra } ;
+
+    public findPathMethod curFindPathMethod;
 
     public Rigidbody2D enemyRb;
 
@@ -50,9 +55,14 @@ public class Enemy : MonoBehaviour
 
     void UpdatePath() //找到新路径，路径满足条件，更新路径和节点索引，否则输出报错
     {
-        List<MapManager.Node> newPath = mapManager.FindPath(transform.position, target.transform.position);
+        List<MapManager.Node> newPath = null;
+        if (curFindPathMethod == findPathMethod.FindPathAStar)
+             newPath = mapManager.FindPathAStar(transform.position, target.transform.position);
+        else if(curFindPathMethod == findPathMethod.FindPathDijkstra)
+            newPath = mapManager.FindPathDijkstra(transform.position, target.transform.position);
 
-        if(newPath != null && newPath.Count > 0)
+
+        if (newPath != null && newPath.Count > 0)
         {
             curPath = newPath;
             pathNodeIndex = 0;

@@ -96,7 +96,7 @@ public class MapManager : MonoBehaviour
 
         Gizmos.color = Color.white;
 
-        for(int y = 0; y <= gridHeight; y++)
+        for (int y = 0; y <= gridHeight; y++)
         {
             Vector2 start = new Vector2(gridOrigin.y, gridOrigin.x + (y * gridSize));
             Vector2 end = new Vector2(gridOrigin.y + gridWidth * gridSize, gridOrigin.x + (y * gridSize));
@@ -105,7 +105,7 @@ public class MapManager : MonoBehaviour
     }
 
     //-------------------寻路算法函数部分-------------------
-    public List<Node> FindPath(Vector2 startWorldPos, Vector2 endWorldPos)
+    public List<Node> FindPathAStar(Vector2 startWorldPos, Vector2 endWorldPos)
     //寻路方法
     //1.转化坐标，获取始终点，并检查结点合法，创建开放列表和关闭哈希表，将起点添加开放表
     //2.循环开始，在所有开放表中找到f值最少的或者g值最小的，添加到关闭表，移除开放表
@@ -169,6 +169,75 @@ public class MapManager : MonoBehaviour
                 {
                     neighor.gCost = newGCost;
                     neighor.hCost = GetDistance(neighor, endNode);
+                    neighor.parent = curNode;
+
+                    if (!openList.Contains(neighor))
+                    {
+                        openList.Add(neighor);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    public List<Node> FindPathDijkstra(Vector2 startWorldPos, Vector2 endWorldPos)
+    //相比于A star算法，dijkstra算法是所有节点hsost为零的特例。
+    {
+        Vector2Int startGrid = WorldToGrid(startWorldPos);
+        Vector2Int endGrid = WorldToGrid(endWorldPos);
+
+        Node startNode = GetNode(startGrid.x, startGrid.y);
+        Node endNode = GetNode(endGrid.x, endGrid.y);
+
+        if (startNode == null || endNode == null)
+        {
+            Debug.Log("Start or end point is null");
+            return null;
+        }
+
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                grid[x, y].gCost = float.MaxValue;
+                grid[x, y].hCost = 0;
+                grid[x, y].parent = null;
+            }
+        }
+
+        List<Node> openList = new List<Node>();
+        HashSet<Node> closeList = new HashSet<Node>();
+
+        startNode.gCost = 0; ;
+
+        openList.Add(startNode);
+
+        while (openList.Count > 0)
+        {
+            Node curNode = openList[0];
+            for (int i = 1; i < openList.Count; i++)
+            {
+                if (openList[i].fCost < curNode.fCost)
+                {
+                    curNode = openList[i];
+                }
+            }
+
+            openList.Remove(curNode);
+            closeList.Add(curNode);
+
+            if (curNode == endNode) return RetracePath(startNode, endNode);
+
+            foreach (Node neighor in GetNeighbors(curNode))
+            {
+                if (neighor.isObstacle || closeList.Contains(neighor)) continue;
+
+                float newGCost = curNode.gCost + GetDistance(neighor, curNode);
+                if (newGCost < neighor.gCost || !openList.Contains(neighor))
+                {
+                    neighor.gCost = newGCost;
+                    neighor.hCost = 0;
                     neighor.parent = curNode;
 
                     if (!openList.Contains(neighor))
