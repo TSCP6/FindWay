@@ -9,12 +9,16 @@ public class MapManager : MonoBehaviour
     public int gridWidth = 20;
     public int gridHeight = 20;
     public float gridSize = 1f;
+    public bool showExploreList = false;
+    public bool drawLines = false;
 
     public LayerMask obstacleLayer;
 
     public Node[,] grid;
 
     private Vector2 gridOrigin => new Vector2(-gridSize * gridWidth / 2, -gridSize * gridHeight / 2);
+
+    private HashSet<Node> exploreList = null;
 
     public class Node
     {
@@ -85,22 +89,34 @@ public class MapManager : MonoBehaviour
     {
         if (grid == null) return;
 
-        Gizmos.color = Color.white;
-
-        for (int x = 0; x <= gridWidth; x++)
+        Gizmos.color = new Color(0, 0, 1, 0.3f);
+        if (showExploreList && exploreList != null)
         {
-            Vector2 start = new Vector2(gridOrigin.x + (x * gridSize), gridOrigin.y);
-            Vector2 end = new Vector2(gridOrigin.x + (x * gridSize), gridOrigin.y + gridHeight * gridSize);
-            Gizmos.DrawLine(start, end);
+            foreach (Node node in exploreList)
+            {
+                Gizmos.DrawCube(node.worldPosition, gridSize * Vector2.one);
+            }
         }
 
-        Gizmos.color = Color.white;
-
-        for (int y = 0; y <= gridHeight; y++)
+        if (drawLines)
         {
-            Vector2 start = new Vector2(gridOrigin.y, gridOrigin.x + (y * gridSize));
-            Vector2 end = new Vector2(gridOrigin.y + gridWidth * gridSize, gridOrigin.x + (y * gridSize));
-            Gizmos.DrawLine(start, end);
+            Gizmos.color = Color.white;
+
+            for (int x = 0; x <= gridWidth; x++)
+            {
+                Vector2 start = new Vector2(gridOrigin.x + (x * gridSize), gridOrigin.y);
+                Vector2 end = new Vector2(gridOrigin.x + (x * gridSize), gridOrigin.y + gridHeight * gridSize);
+                Gizmos.DrawLine(start, end);
+            }
+
+            Gizmos.color = Color.white;
+
+            for (int y = 0; y <= gridHeight; y++)
+            {
+                Vector2 start = new Vector2(gridOrigin.y, gridOrigin.x + (y * gridSize));
+                Vector2 end = new Vector2(gridOrigin.y + gridWidth * gridSize, gridOrigin.x + (y * gridSize));
+                Gizmos.DrawLine(start, end);
+            }
         }
     }
 
@@ -158,7 +174,11 @@ public class MapManager : MonoBehaviour
             openList.Remove(curNode);
             closeList.Add(curNode);
 
-            if (curNode == endNode) return RetracePath(startNode, endNode);
+            if (curNode == endNode)
+            {
+                exploreList = closeList;
+                return RetracePath(startNode, endNode);
+            }
 
             foreach (Node neighor in GetNeighbors(curNode))
             {
@@ -178,6 +198,9 @@ public class MapManager : MonoBehaviour
                 }
             }
         }
+
+        exploreList = closeList;
+
         return null;
     }
 
@@ -227,8 +250,11 @@ public class MapManager : MonoBehaviour
             openList.Remove(curNode);
             closeList.Add(curNode);
 
-            if (curNode == endNode) return RetracePath(startNode, endNode);
-
+            if (curNode == endNode)
+            {
+                exploreList = closeList;
+                return RetracePath(startNode, endNode);
+            }
             foreach (Node neighor in GetNeighbors(curNode))
             {
                 if (neighor.isObstacle || closeList.Contains(neighor)) continue;
@@ -247,6 +273,9 @@ public class MapManager : MonoBehaviour
                 }
             }
         }
+
+        exploreList = closeList;
+
         return null;
     }
 

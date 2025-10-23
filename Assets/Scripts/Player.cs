@@ -10,6 +10,8 @@ public class Player : MonoBehaviour
 
     public Rigidbody2D playerRb;
 
+    public LayerMask enemy;
+
     float XInput, YInput;
     float movingThreshold = 0.05f;
 
@@ -41,6 +43,15 @@ public class Player : MonoBehaviour
         else
         {
             playerRb.velocity = new Vector2(0, 0);
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.gameObject.name == "Enemy")
+        {
+            Destroy(gameObject);
+            StopAllCoroutines();
         }
     }
 }
