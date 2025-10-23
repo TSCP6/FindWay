@@ -10,11 +10,11 @@ public class MapManager : MonoBehaviour
     public int gridHeight = 20;
     public float gridSize = 1f;
 
-    public Vector2 gridOrigin = Vector2.zero;
-
     public LayerMask obstacleLayer;
 
     public Node[,] grid;
+
+    private Vector2 gridOrigin => new Vector2(-gridSize * gridWidth / 2, -gridSize * gridHeight / 2);
 
     public class Node
     {
