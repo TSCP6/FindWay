@@ -279,6 +279,10 @@ public class MapManager : MonoBehaviour
         return null;
     }
 
+    //--------------------使用heap优化的dijkstra算法--------------------
+    //使用最小堆后，每次从最小堆中找到最小结点只需要进行上浮操作，即放在堆底与父节点进行比较,复杂度为log(n)
+    //移除最小节点，即添加到寻路结点中时，只需进行下沉操作，移除堆顶，将堆底元素放在堆顶重新生成堆
+
     List<Node> RetracePath(Node startNode, Node endNode) //从终点回溯到起点
     {
         List<Node> path = new List<Node>();
