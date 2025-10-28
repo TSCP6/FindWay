@@ -13,7 +13,7 @@ public class Enemy : MonoBehaviour
     public float findWayInterval = 0.5f;
     public bool showPath = false;
 
-    public enum findPathMethod { FindPathAStar, FindPathDijkstra } ;
+    public enum findPathMethod { FindPathAStar, FindPathDijkstra, FindPathDijkstraWithHeap } ;
 
     public findPathMethod curFindPathMethod;
 
@@ -57,9 +57,11 @@ public class Enemy : MonoBehaviour
     {
         List<MapManager.Node> newPath = null;
         if (curFindPathMethod == findPathMethod.FindPathAStar)
-             newPath = mapManager.FindPathAStar(transform.position, target.transform.position);
-        else if(curFindPathMethod == findPathMethod.FindPathDijkstra)
+            newPath = mapManager.FindPathAStar(transform.position, target.transform.position);
+        else if (curFindPathMethod == findPathMethod.FindPathDijkstra)
             newPath = mapManager.FindPathDijkstra(transform.position, target.transform.position);
+        else if (curFindPathMethod == findPathMethod.FindPathDijkstraWithHeap)
+            newPath = mapManager.FindPathDijkstraWithHeap(transform.position, target.transform.position);
 
 
         if (newPath != null && newPath.Count > 0)

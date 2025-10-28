@@ -59,7 +59,7 @@ public class Heap<T> where T : IHeapItem<T> //限制T必须完成IHeapItem接口
     //确保成功添加元素
     public bool Contains(T item)
     {
-        return Equals(items[item.HeapIndex], item);
+        return item.HeapIndex < currentItemCount && Equals(items[item.HeapIndex], item);
     }
 
     //下沉操作函数
@@ -68,11 +68,11 @@ public class Heap<T> where T : IHeapItem<T> //限制T必须完成IHeapItem接口
     //如果当前元素值小于交换索引值，交换元素，否则退出循环
     private void SortDown(T item)
     {
-        int leftChildIndex = item.HeapIndex * 2 + 1;
-        int rightChildIndex = item.HeapIndex * 2 + 2;
-        int swapIndex = 0;
         while (true)
         {
+            int leftChildIndex = item.HeapIndex * 2 + 1;
+            int rightChildIndex = item.HeapIndex * 2 + 2;
+            int swapIndex = leftChildIndex;
             if (leftChildIndex < currentItemCount)
             {
                 if ((rightChildIndex < currentItemCount) && items[leftChildIndex].CompareTo(items[rightChildIndex]) > 0)
@@ -100,18 +100,18 @@ public class Heap<T> where T : IHeapItem<T> //限制T必须完成IHeapItem接口
     private void SortUp(T item)
     {
         int parentIndex = (item.HeapIndex - 1) / 2;
-        while (true)
+        while (item.HeapIndex > 0)
         {
             T parentItem = items[parentIndex];
-            if(item.CompareTo(items[parentIndex]) > 0)
+            if (item.CompareTo(items[parentIndex]) < 0)
             {
                 Swap(item, items[parentIndex]);
+                parentIndex = (item.HeapIndex - 1) / 2;
             }
             else
             {
                 break;
             }
-            parentIndex = (item.HeapIndex - 1) / 2;
         }
     }
 

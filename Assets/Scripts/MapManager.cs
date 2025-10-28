@@ -20,7 +20,7 @@ public class MapManager : MonoBehaviour
 
     private HashSet<Node> exploreList = null;
 
-    public class Node
+    public class Node : IHeapItem<Node>
     {
         public Vector2Int position;
         public Vector2 worldPosition; //世界坐标
@@ -29,6 +29,19 @@ public class MapManager : MonoBehaviour
         public float fCost => gCost + hCost; //总代价
         public bool isObstacle; //是否是障碍
         public Node parent; //回溯路径
+
+        private int heapIndex;
+        public int HeapIndex { get => heapIndex; set => heapIndex = value; }
+
+        public int CompareTo(Node other)
+        {
+            int compare = fCost.CompareTo(other.fCost);
+            if(compare == 0)
+            {
+                compare = hCost.CompareTo(other.hCost);
+            }
+            return compare;
+        }
     }
 
     void Awake()
@@ -282,6 +295,83 @@ public class MapManager : MonoBehaviour
     //--------------------使用heap优化的dijkstra算法--------------------
     //使用最小堆后，每次从最小堆中找到最小结点只需要进行上浮操作，即放在堆底与父节点进行比较,复杂度为log(n)
     //移除最小节点，即添加到寻路结点中时，只需进行下沉操作，移除堆顶，将堆底元素放在堆顶重新生成堆
+    public List<Node> FindPathDijkstraWithHeap(Vector2 startWorldPos, Vector2 endWorldPos)
+    {
+        Vector2Int startGrid = WorldToGrid(startWorldPos);
+        Vector2Int endGrid = WorldToGrid(endWorldPos);
+
+        Node startNode = GetNode(startGrid.x, startGrid.y);
+        Node endNode = GetNode(endGrid.x, endGrid.y);
+
+        if (startNode == null || endNode == null)
+        {
+            Debug.Log("Start or end point is null");
+            return null;
+        }
+
+        // 初始化所有节点
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                grid[x, y].gCost = float.MaxValue;
+                grid[x, y].hCost = 0;
+                grid[x, y].parent = null;
+            }
+        }
+
+        Heap<Node> openHeap = new Heap<Node>(gridHeight * gridWidth);
+        HashSet<Node> closeList = new HashSet<Node>();
+        HashSet<Node> inHeap = new HashSet<Node>();
+
+        startNode.gCost = 0;
+        openHeap.Add(startNode);
+        inHeap.Add(startNode);
+
+        while (openHeap.Count > 0)
+        {
+            Node curNode = openHeap.RemoveFirst();
+            inHeap.Remove(curNode);
+            closeList.Add(curNode);
+
+            // 找到目标节点
+            if (curNode == endNode)
+            {
+                exploreList = closeList;
+                return RetracePath(startNode, endNode);
+            }
+
+            foreach (Node neighbor in GetNeighbors(curNode))
+            {
+                // 跳过障碍物和已处理的节点
+                if (neighbor.isObstacle || closeList.Contains(neighbor))
+                    continue;
+
+                float newGCost = curNode.gCost + GetDistance(neighbor, curNode);
+
+                if (newGCost < neighbor.gCost)
+                {
+                    neighbor.gCost = newGCost;
+                    neighbor.hCost = 0; // Dijkstra 算法不使用启发式
+                    neighbor.parent = curNode;
+
+                    if (inHeap.Contains(neighbor))
+                    {
+                        openHeap.UpdateItem(neighbor); // 更新堆中的节点
+                    }
+                    else
+                    {
+                        openHeap.Add(neighbor);
+                        inHeap.Add(neighbor);
+                    }
+                }
+            }
+        }
+
+        exploreList = closeList;
+        Debug.Log("No path found");
+        return null;
+    }
 
     List<Node> RetracePath(Node startNode, Node endNode) //从终点回溯到起点
     {
